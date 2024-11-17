@@ -1,0 +1,166 @@
+# Yldefonso Hérnandez Danna Paola
+# Guzmán Martínez Frida Paola
+
+import numpy as np  # Importa la biblioteca NumPy para operaciones numéricas
+import matplotlib.pyplot as plt  # Importa matplotlib para crear gráficos
+
+def hilbert_matrix(n):
+    """Genera la matriz de Hilbert H(n).
+    
+    La matriz de Hilbert es una matriz cuadrada donde cada elemento
+    hij es igual a 1/(i + j - 1). Es una matriz bien conocida en
+    análisis numérico y se utiliza a menudo para probar algoritmos
+    de factorización.
+    
+    Parámetros:
+    n : int
+        El tamaño de la matriz de Hilbert a generar.
+        
+    Retorna:
+    np.array
+        La matriz de Hilbert H(n).
+    """
+    # Genera la matriz de Hilbert utilizando comprensión de listas
+    return np.array([[1 / (i + j - 1) for j in range(1, n + 1)] for i in range(1, n + 1)])
+
+def classic_gram_schmidt(A):
+    """Implementación del método clásico de Gram-Schmidt.
+    
+    Este método toma una matriz A y genera una matriz ortogonal Q
+    cuyas columnas son vectores ortogonales que span el mismo espacio
+    que las columnas de A.
+    
+    Parámetros:
+    A : np.array
+        La matriz de entrada que se desea ortogonalizar.
+        
+    Retorna:
+    np.array
+        La matriz ortogonal Q.
+    """
+    m, n = A.shape  # Obtener las dimensiones de A (número de filas m y columnas n)
+    Q = np.zeros((m, n))  # Inicializar la matriz Q con ceros (m filas y n columnas)
+    
+    for j in range(n):  # Iterar sobre cada columna j de A
+        v = A[:, j]  # Tomar la j-ésima columna de A como vector v
+        for i in range(j):  # Iterar sobre las columnas anteriores (0 a j-1)
+            # Proyectar v sobre las columnas anteriores de Q y restar esa proyección
+            v -= np.dot(Q[:, i], A[:, j]) * Q[:, i]
+        # Normalizar el vector resultante y asignarlo a la columna j de Q
+        Q[:, j] = v / np.linalg.norm(v)
+    
+    return Q  # Retornar la matriz ortogonal Q
+
+def modified_gram_schmidt(A):
+    """Implementación del método modificado de Gram-Schmidt.
+    
+    Este método es una variante más estable del método clásico,
+    que reduce la acumulación de errores numéricos al realizar
+    proyecciones y normalizaciones en el mismo ciclo.
+    
+    Parámetros:
+    A : np.array
+        La matriz de entrada que se desea ortogonalizar.
+        
+    Retorna:
+    np.array
+        La matriz ortogonal Q.
+    """
+    m, n = A.shape  # Obtener las dimensiones de A (número de filas m y columnas n)
+    Q = np.zeros((m, n))  # Inicializar la matriz Q con ceros (m filas y n columnas)
+    R = np.zeros((n, n))  # Inicializar la matriz R con ceros (n x n)
+    
+    for j in range(n):  # Iterar sobre cada columna j de A
+        v = A[:, j]  # Tomar la j-ésima columna de A como vector v
+        for i in range(j):  # Iterar sobre las columnas anteriores (0 a j-1)
+            R[i, j] = np.dot(Q[:, i], A[:, j])  # Calcular el coeficiente R[i,j]
+            v -= R[i, j] * Q[:, i]  # Proyectar v sobre las columnas anteriores de Q y restar esa proyección
+        R[j, j] = np.linalg.norm(v)  # Calcular norma del vector resultante y asignarlo a R[j,j]
+        Q[:, j] = v / R[j, j]  # Normalizar el vector resultante y asignarlo a la columna j de Q
+    
+    return Q  # Retornar la matriz ortogonal Q
+
+def householder_reflection(A):
+    """Implementación de la factorización QR usando matrices de Householder.
+    
+    Este método utiliza reflexiones de Householder para generar 
+    una factorización QR estable numéricamente.
+    
+    Parámetros:
+    A : np.array
+        La matriz que se desea factorizar.
+        
+    Retorna:
+    tuple (np.array, np.array)
+        La matriz ortogonal Q y la matriz triangular superior R.
+    """
+    m, n = A.shape  # Obtener las dimensiones de A (número de filas m y columnas n)
+    Q = np.eye(m)   # Inicializar la matriz identidad para Q (m x m)
+    R = A.copy()     # Copiar A en R para modificarlo durante el proceso
+    
+    for k in range(n):  # Iterar sobre cada columna k hasta n-1
+        x = R[k:m, k]  # Tomar el vector desde el k-ésimo elemento hacia abajo en la k-ésima columna
+        e = np.zeros_like(x)  # Crear un vector cero del mismo tamaño que x
+        e[0] = np.linalg.norm(x) * np.sign(x[0])  # Establecer el primer elemento como norma de x con signo
+        
+        u = x - e  # Calcular el vector u para la reflexión Householder
+        u /= np.linalg.norm(u)  # Normalizar u
+        
+        # Actualizar R usando la reflexión Householder para eliminar elementos debajo del pivote
+        R[k:m, k:n] -= 2 * np.outer(u, u.T @ R[k:m, k:n])
+        # Actualizar Q usando la reflexión Householder para mantener ortogonalidad
+        Q[k:m, :] -= 2 * np.outer(u, u.T @ Q[k:m, :])
+    
+    return Q.T, R  # Retornar la transpuesta de Q y la matriz triangular superior R
+
+def loss_of_orthogonality(Q):
+    """Calcula la pérdida de ortogonalidad.
+    
+    Esta función mide cuán cerca está la matriz Q de ser ortogonal,
+    calculando ||I - QtQ|| y devolviendo -log10 del resultado,
+    lo que puede interpretarse como "dígitos significativos".
+    
+    Parámetros:
+    Q : np.array
+        La matriz ortogonal cuya pérdida de ortogonalidad se desea calcular.
+        
+    Retorna:
+    float
+        Pérdida de ortogonalidad medida en dígitos significativos.
+    """
+    I_minus_QtQ = np.eye(Q.shape[1]) - Q.T @ Q  # Calcular I - QtQ para verificar ortogonalidad
+    return -np.log10(np.linalg.norm(I_minus_QtQ))  # Retornar -log10 de la norma como medida
+
+# Parámetros para el análisis
+max_n = 12  # Tamaño máximo para las matrices de Hilbert (de tamaño mínimo 2 a máximo definido)
+loss_classic = []   # Lista para almacenar pérdidas del método clásico
+loss_modified = []  # Lista para almacenar pérdidas del método modificado
+loss_householder = []  # Lista para almacenar pérdidas del método Householder
+
+# Iterar sobre tamaños desde 2 hasta max_n para generar matrices y calcular pérdidas
+for n in range(2, max_n + 1):
+    H = hilbert_matrix(n)  # Generar la matriz de Hilbert H(n)
+    
+    # Gram-Schmidt Clásico: calcular pérdida y almacenar resultado
+    Q_classic = classic_gram_schmidt(H)  
+    loss_classic.append(loss_of_orthogonality(Q_classic))
+    
+    # Gram-Schmidt Modificado: calcular pérdida y almacenar resultado
+    Q_modified = modified_gram_schmidt(H)  
+    loss_modified.append(loss_of_orthogonality(Q_modified))
+    
+    # Householder: calcular pérdida y almacenar resultado
+    Q_householder, _ = householder_reflection(H)  
+    loss_householder.append(loss_of_orthogonality(Q_householder))
+
+# Graficar resultados: pérdida de ortogonalidad para diferentes métodos y tamaños de matrices
+plt.figure(figsize=(10, 6))  # Configurar tamaño del gráfico
+plt.plot(range(2, max_n + 1), loss_classic, label='Gram-Schmidt Clásico', marker='o')  
+plt.plot(range(2, max_n + 1), loss_modified, label='Gram-Schmidt Modificado', marker='s')  
+plt.plot(range(2, max_n + 1), loss_householder, label='Householder', marker='x')  
+plt.xlabel('n (tamaño de la matriz)')   # Etiqueta del eje X 
+plt.ylabel('-log10(||I - QtQ||)')       # Etiqueta del eje Y 
+plt.title('Pérdida de Ortogonalidad para Diferentes Métodos')   # Título del gráfico 
+plt.legend()   # Mostrar leyenda 
+plt.grid()     # Mostrar cuadrícula 
+plt.show()     # Mostrar gráfico
