@@ -1,0 +1,104 @@
+# Yldefonso Hérnandez Danna Paola
+# Guzmán Martínez Frida Paola
+
+############ inciso a
+import numpy as np  # Se importa la librería numpy para trabajar con arrays y álgebra lineal
+from numpy import linalg as la  # Se importa el submódulo linalg de numpy para funciones de álgebra lineal, aunque no se usa en el código
+
+# Definición de una matriz A de 3x2 (3 filas y 2 columnas)
+A = [[0.16, .10], [0.17, 0.11], [2.02, 1.29]]
+A = np.array(A, dtype=float)  # Convierte la lista a un array numpy de tipo float
+
+# Definición de un vector columna b de tamaño 3
+b = np.array([0.26, 0.28, 3.31])
+
+# Función que implementa la descomposición QR de una matriz A
+def QR(A):
+  Q = np.empty_like(A)  # Inicializa una matriz Q vacía con las mismas dimensiones que A
+  R = np.zeros([A.shape[1], A.shape[1]])  # Inicializa una matriz R cuadrada de ceros, de tamaño igual al número de columnas de A
+  vi = np.zeros([A.shape[1]])  # Inicializa un vector vi vacío de longitud igual al número de columnas de A
+  
+  # Ciclo que recorre las columnas de la matriz A para calcular Q y R
+  for i in range(A.shape[1]):
+    vi = A[:, i]  # Se toma la columna i de A y se asigna a vi
+    for j in range(i):
+      # Calcula el valor R[j, i] como el producto punto de las columnas j de Q y vi
+      R[j, i] = np.dot(Q[:, j].T, vi)
+      # Actualiza vi restando la proyección de vi sobre Q[:, j]
+      vi = vi - R[j, i] * Q[:, j]
+      # El comentario sugiere que esto está calculando la proyección ortogonal de vi sobre Q[:, j]
+      
+    R[i, i] = np.linalg.norm(vi, 2)  # Calcula la norma L2 de vi y la asigna a R[i, i]
+    Q[:, i] = vi / R[i, i]  # Normaliza vi para obtener la columna i de Q
+
+  return Q, R  # Retorna las matrices Q y R
+
+# Se llama a la función QR para descomponer la matriz A
+Q, R = QR(A)
+
+# Muestra las matrices Q y R obtenidas
+print(Q)
+print(R)
+
+# Verificación de la descomposición QR: se calcula el producto de Q y R
+print(np.matmul(Q, R))
+
+# Resolución del sistema de ecuaciones Q * R * x = b
+x = np.linalg.solve(R, np.dot(Q.T, b))  # Resuelve el sistema R * x = Q.T * b
+
+# Muestra la solución x
+print("QR:")
+print(x)
+
+
+
+
+############ inciso b
+
+import numpy as np  # Se importa la librería numpy para trabajar con arrays y álgebra lineal
+from numpy import linalg as la  # Se importa el submódulo linalg de numpy para funciones de álgebra lineal, aunque no se usa en el código
+
+# Definición de una matriz A de 3x2 (3 filas y 2 columnas)
+A = [[0.16, .10], [0.17, 0.11], [2.02, 1.29]]
+A = np.array(A, dtype=float)  # Convierte la lista a un array numpy de tipo float
+
+# Definición de un vector columna b de tamaño 3
+b = np.array([0.27, 0.25, 3.33])
+
+# Función que implementa la descomposición QR de una matriz A
+def QR(A):
+  Q = np.empty_like(A)  # Inicializa una matriz Q vacía con las mismas dimensiones que A
+  R = np.zeros([A.shape[1], A.shape[1]])  # Inicializa una matriz R cuadrada de ceros, de tamaño igual al número de columnas de A
+  vi = np.zeros([A.shape[1]])  # Inicializa un vector vi vacío de longitud igual al número de columnas de A
+  
+  # Ciclo que recorre las columnas de la matriz A para calcular Q y R
+  for i in range(A.shape[1]):
+    vi = A[:, i]  # Se toma la columna i de A y se asigna a vi
+    for j in range(i):
+      # Calcula el valor R[j, i] como el producto punto de las columnas j de Q y vi
+      R[j, i] = np.dot(Q[:, j].T, vi)
+      # Actualiza vi restando la proyección de vi sobre Q[:, j]
+      vi = vi - R[j, i] * Q[:, j]
+      # El comentario sugiere que esto está calculando la proyección ortogonal de vi sobre Q[:, j]
+      
+    R[i, i] = np.linalg.norm(vi, 2)  # Calcula la norma L2 de vi y la asigna a R[i, i]
+    Q[:, i] = vi / R[i, i]  # Normaliza vi para obtener la columna i de Q
+
+  return Q, R  # Retorna las matrices Q y R
+
+# Se llama a la función QR para descomponer la matriz A
+Q, R = QR(A)
+
+# Muestra las matrices Q y R obtenidas
+print(Q)
+print(R)
+
+# Verificación de la descomposición QR: se calcula el producto de Q y R
+print(np.matmul(Q, R))
+
+# Resolución del sistema de ecuaciones Q * R * x = b
+x = np.linalg.solve(R, np.dot(Q.T, b))  # Resuelve el sistema R * x = Q.T * b
+
+# Muestra la solución x
+print("QR:")
+print(x)
