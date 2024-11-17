@@ -1,0 +1,142 @@
+# Yldefonso Hérnandez Danna Paola
+# Guzmán Martínez Frida Paola
+
+
+#########b) Factorizaci ́on QR de Householder.
+
+# Importamos las librerías necesarias de NumPy, incluida la sub-librería linalg para operaciones lineales.
+import numpy as np
+from numpy import linalg as LA
+
+# Definimos epsilon como la precisión mínima de un número de tipo float (el valor más pequeño que se puede sumar a 1 sin cambiarlo).
+epsilon = np.finfo(float).eps
+
+# Definimos la matriz A y el vector b como datos del sistema.
+A = np.array([[1., 1., 1.],
+              [epsilon, 0., 0.],
+              [0., epsilon, 0.],
+              [0., 0., epsilon]])
+
+b = np.array([1, 0, 0, 0])
+
+# Definimos el tamaño de la matriz A, que es 4 (ya que A es una matriz 4x3).
+n = A.shape[0]
+
+# Inicializamos la matriz Q como la matriz identidad (de tamaño n).
+Q = np.eye(n)
+
+# Inicializamos un vector xi como un vector de ceros de tamaño n, y lo llenamos con la primera columna de A.
+xi = np.zeros(n)
+xi[0:] = A[:, 0]
+
+# Calculamos la norma de xi, que es la magnitud de ese vector.
+norm_x = LA.norm(xi)
+
+# Creamos un vector ei, que es un vector unitario de la misma dimensión que xi.
+ei = np.zeros(n)
+ei[0] = 1.0
+
+# Calculamos el vector ui, que es una combinación de xi y ei, ajustado por el signo de A[0, 0] y la norma de xi.
+ui = np.zeros(n)
+ui = xi + np.sign(A[0, 0]) * norm_x * ei
+
+# Calculamos el vector vi, que es la normalización del vector ui.
+vi = ui / LA.norm(ui)
+
+# Reshape de vi para convertirlo en una columna.
+vi = vi.reshape(-1, 1)
+
+# Calculamos la matriz de reflexión Householder H, y actualizamos A y Q.
+H = np.eye(n) - 2 * vi @ vi.T
+A = H @ A
+Q = Q @ H
+
+# Mostramos las nuevas matrices A y Q después de la primera reflexión Householder.
+A, Q
+
+# Repetimos el proceso para la segunda columna de A (después de la primera reflexión).
+xi = np.zeros(n)
+xi[1:] = A[:, 1][1:]  # Tomamos los valores de la columna 1, empezando desde la fila 1.
+norm_x = LA.norm(xi)
+
+ei = np.zeros(n)
+ei[1] = 1.0  # Vector unitario en la posición 1.
+
+# Calculamos el vector ui para la segunda columna.
+ui = np.zeros(n)
+ui = xi + np.sign(A[1, 1]) * norm_x * ei
+
+# Normalizamos el vector ui para obtener vi.
+vi = ui / LA.norm(ui)
+vi = vi.reshape(-1, 1)
+
+# Calculamos la matriz Householder H para la segunda columna y actualizamos A y Q.
+H = np.eye(n) - 2 * vi @ vi.T
+A = H @ A
+Q = Q @ H
+
+# Mostramos las matrices A y Q después de la segunda reflexión Householder.
+A, Q
+
+# Definimos la función Householder que realiza el algoritmo de descomposición QR usando reflecciones Householder.
+def Householder(A):
+    Q = np.eye(len(A))  # Inicializamos Q como la identidad de tamaño n.
+    n = A.shape[1]  # Obtenemos el número de columnas de A.
+
+    # Realizamos el proceso de Householder para cada columna de A.
+    for i in range(n):
+        xi = np.zeros(len(A))
+        xi[i:] = A[:, i][i:]  # Tomamos los valores a partir de la fila i.
+        norm_x = LA.norm(xi)  # Calculamos la norma de xi.
+
+        # Creamos el vector unitario ei en la posición i.
+        ei = np.zeros(len(A))
+        ei[i] = 1.0
+
+        # Calculamos el vector ui como la suma de xi y un múltiplo de ei.
+        ui = np.zeros(len(A))
+        ui = xi + np.sign(A[i, i]) * norm_x * ei
+
+        # Normalizamos el vector ui para obtener vi.
+        vi = ui / LA.norm(ui)
+        vi = vi.reshape(-1, 1)
+
+        # Calculamos la matriz de reflexión H y actualizamos A y Q.
+        H = np.eye(len(A)) - 2 * vi @ vi.T
+        A = H @ A
+        Q = Q @ H
+
+    return Q, A  # Devolvemos las matrices Q y A modificadas.
+
+# Definimos la función de sustitución hacia atrás (SustAtras) que resuelve el sistema triangular superior R * x = y.
+def SustAtras(U, y):
+    x = np.zeros_like(y)
+    n = U.shape[0]  # Número de filas de U.
+    
+    # Resolvemos para el último valor de x.
+    x[n-1] = y[n-1] / U[n-1, n-1]
+    
+    # Realizamos la sustitución hacia atrás.
+    for i in range(n-2, -1, -1):
+        suma = 0.0
+        for j in range(i+1, n):
+            suma += U[i, j] * x[j]
+        x[i] = (y[i] - suma) / U[i, i]
+
+    return x  # Devolvemos la solución x.
+
+# Aplicamos la descomposición QR de Householder a A.
+Q, R = Householder(A)
+
+# Verificamos que Q * R nos devuelve la matriz A original.
+Q @ R
+
+# Mostramos la matriz R después de la descomposición QR.
+R
+
+# Calculamos y = Q^T * b, donde b es el vector de resultados.
+A_aux = Q @ R
+y = Q.T @ b  # Calculamos y usando la transpuesta de Q.
+
+# Resolvemos el sistema R * x = y usando sustitución hacia atrás.
+x = SustAtras(R, y)
